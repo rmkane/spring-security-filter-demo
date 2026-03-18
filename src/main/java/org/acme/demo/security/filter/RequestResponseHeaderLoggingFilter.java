@@ -53,13 +53,7 @@ public class RequestResponseHeaderLoggingFilter extends OncePerRequestFilter {
     }
 
     private boolean shouldLog(@NonNull HttpServletRequest request) {
-        return log.isDebugEnabled()
-            && isHelloRequest(request)
-            && !shouldIgnore(request);
-    }
-
-    private boolean isHelloRequest(@NonNull HttpServletRequest request) {
-        return "/api/default/hello".equals(request.getRequestURI());
+        return log.isDebugEnabled() && !shouldIgnore(request);
     }
 
     private boolean shouldIgnore(@NonNull HttpServletRequest request) {

@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import org.acme.demo.model.AppInfo;
 import org.acme.demo.service.DefaultService;
 
 @RestController
@@ -16,8 +17,8 @@ public class DefaultController {
 
     private final DefaultService defaultService;
 
-    @GetMapping("/hello")
-    public ResponseEntity<String> hello() {
-        return ResponseEntity.ok(defaultService.hello());
+    @GetMapping("/info")
+    public ResponseEntity<AppInfo> fetchInfo() {
+        return ResponseEntity.ok(defaultService.fetchInfo());
     }
 }

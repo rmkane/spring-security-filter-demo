@@ -1,7 +1,13 @@
+management:
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
 acme:
   security:
     header-filter:
-      ignored-headers: '${ACME_SECURITY_HEADER_FILTER_IGNORED_HEADERS:{"user-agent":["GLB-Client/1.35+"]}}'
+      ignored-headers: '${ACME_SECURITY_HEADER_FILTER_IGNORED_HEADERS:{"user-agent":["GLB-Client/1.35+","HealthChecker/1.0"]}}'
 
 logging:
   level:
