@@ -1,0 +1,8 @@
+acme:
+  security:
+    header-filter:
+      ignored-headers: '${ACME_SECURITY_HEADER_FILTER_IGNORED_HEADERS:{"user-agent":["GLB-Client/1.35+"]}}'
+
+logging:
+  level:
+    org.acme.demo.security: DEBUG
