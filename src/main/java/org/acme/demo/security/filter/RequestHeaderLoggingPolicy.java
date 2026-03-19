@@ -24,9 +24,9 @@ public class RequestHeaderLoggingPolicy {
     private final Map<String, List<HeaderValuePatternMatcher>> ignoredHeaderMatchers;
 
     public RequestHeaderLoggingPolicy(HeaderFilterProperties properties, ObjectMapper objectMapper) {
-        this.enabled = properties.isEnabled();
+        this.enabled = properties.enabled();
         this.ignoredHeaderMatchers = compileIgnoredHeaders(
-                HeaderFilterConfigParser.parseIgnoredHeaders(objectMapper, properties.getIgnoredHeaders())
+                HeaderFilterConfigParser.parseIgnoredHeaders(objectMapper, properties.ignoredHeaders())
         );
     }
 

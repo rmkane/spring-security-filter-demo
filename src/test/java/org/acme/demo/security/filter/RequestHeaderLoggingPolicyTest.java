@@ -16,8 +16,8 @@ class RequestHeaderLoggingPolicyTest {
     @Test
     void shouldLogWhenEnabledDebugAndRequestIsNotIgnored() {
         RequestHeaderLoggingPolicy policy = new RequestHeaderLoggingPolicy(
-                properties(true, "{\"user-agent\":[\"HealthChecker/*\"]}")
-                , objectMapper
+                properties(true, "{\"user-agent\":[\"HealthChecker/*\"]}"),
+                objectMapper
         );
 
         MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/default/info");
@@ -29,8 +29,8 @@ class RequestHeaderLoggingPolicyTest {
     @Test
     void shouldNotLogWhenAnyConfiguredHeaderNameMatches() {
         RequestHeaderLoggingPolicy policy = new RequestHeaderLoggingPolicy(
-                properties(true, "{\"user-agent\":[\"GLB-Client/*\"],\"x-probe-id\":[\"probe-123\"]}")
-                , objectMapper
+                properties(true, "{\"user-agent\":[\"GLB-Client/*\"],\"x-probe-id\":[\"probe-123\"]}"),
+                objectMapper
         );
 
         MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/default/info");
@@ -42,8 +42,8 @@ class RequestHeaderLoggingPolicyTest {
     @Test
     void shouldNotLogWhenWildcardPatternMatches() {
         RequestHeaderLoggingPolicy policy = new RequestHeaderLoggingPolicy(
-                properties(true, "{\"user-agent\":[\"GLB-Client/*\"]}")
-                , objectMapper
+                properties(true, "{\"user-agent\":[\"GLB-Client/*\"]}"),
+                objectMapper
         );
 
         MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/default/info");
@@ -55,8 +55,8 @@ class RequestHeaderLoggingPolicyTest {
     @Test
     void shouldNotLogWhenDisabled() {
         RequestHeaderLoggingPolicy policy = new RequestHeaderLoggingPolicy(
-                properties(false, "{\"user-agent\":[\"HealthChecker/1.0\"]}")
-                , objectMapper
+                properties(false, "{\"user-agent\":[\"HealthChecker/1.0\"]}"),
+                objectMapper
         );
 
         MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/default/info");
@@ -68,8 +68,8 @@ class RequestHeaderLoggingPolicyTest {
     @Test
     void shouldNotLogWhenDebugIsDisabled() {
         RequestHeaderLoggingPolicy policy = new RequestHeaderLoggingPolicy(
-                properties(true, "{\"user-agent\":[\"HealthChecker/1.0\"]}")
-                , objectMapper
+                properties(true, "{\"user-agent\":[\"HealthChecker/1.0\"]}"),
+                objectMapper
         );
 
         MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/default/info");
@@ -79,9 +79,6 @@ class RequestHeaderLoggingPolicyTest {
     }
 
     private HeaderFilterProperties properties(boolean enabled, String ignoredHeaders) {
-        HeaderFilterProperties properties = new HeaderFilterProperties();
-        properties.setEnabled(enabled);
-        properties.setIgnoredHeaders(ignoredHeaders);
-        return properties;
+        return new HeaderFilterProperties(enabled, ignoredHeaders);
     }
 }
