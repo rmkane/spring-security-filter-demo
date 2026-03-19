@@ -1,8 +1,11 @@
 package org.acme.demo.util;
 
 import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -22,11 +25,39 @@ public final class HeaderFilterConfigParser {
         }
 
         try {
-            return objectMapper.copy()
+            Map<String, Set<String>> parsedHeaders = objectMapper.copy()
                     .configure(JsonReadFeature.ALLOW_TRAILING_COMMA.mappedFeature(), true)
                     .readValue(ignoredHeadersJson, IGNORED_HEADERS_TYPE);
+
+            return normalizeHeaders(parsedHeaders);
         } catch (Exception exception) {
             throw new IllegalArgumentException("Failed to parse acme.security.header-filter.ignored-headers JSON", exception);
         }
+    }
+
+    private static Map<String, Set<String>> normalizeHeaders(Map<String, Set<String>> parsedHeaders) {
+        if (parsedHeaders == null || parsedHeaders.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
+        Map<String, Set<String>> normalizedHeaders = new LinkedHashMap<>();
+
+        parsedHeaders.forEach((headerName, headerValues) -> normalizedHeaders.put(
+                headerName.toLowerCase(Locale.ROOT),
+                normalizeValues(headerValues)
+        ));
+
+        return Collections.unmodifiableMap(normalizedHeaders);
+    }
+
+    private static Set<String> normalizeValues(Set<String> headerValues) {
+        if (headerValues == null || headerValues.isEmpty()) {
+            return Collections.emptySet();
+        }
+
+        return headerValues.stream()
+                .filter(value -> value != null && !value.isBlank())
+                .map(String::trim)
+                .collect(Collectors.toUnmodifiableSet());
     }
 }

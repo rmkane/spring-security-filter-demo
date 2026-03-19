@@ -1,6 +1,7 @@
 package org.acme.demo.security.filter;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 
@@ -64,6 +65,7 @@ public class RequestResponseHeaderLoggingFilter extends OncePerRequestFilter {
 
     private boolean shouldIgnore(@NonNull HttpServletRequest request) {
         return ignoredHeaders.entrySet().stream()
-            .anyMatch(entry -> request.getHeader(entry.getKey()) != null && entry.getValue().contains(request.getHeader(entry.getKey())));
+            .anyMatch(entry -> Collections.list(request.getHeaders(entry.getKey())).stream()
+                .anyMatch(entry.getValue()::contains));
     }
 }
