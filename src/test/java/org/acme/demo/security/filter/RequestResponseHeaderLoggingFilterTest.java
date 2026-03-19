@@ -1,6 +1,7 @@
 package org.acme.demo.security.filter;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.io.IOException;
 
@@ -113,5 +114,44 @@ class RequestResponseHeaderLoggingFilterTest {
         filter.doFilterInternal(request, response, new MockFilterChain());
 
         assertThat(listAppender.list).isEmpty();
+    }
+
+    @Test
+    void shouldNotLogWhenAnyConfiguredHeaderNameMatches() throws ServletException, IOException {
+        RequestResponseHeaderLoggingFilter filter = new RequestResponseHeaderLoggingFilter(
+                true,
+                new ObjectMapper(),
+                "{\"user-agent\":[\"GLB-Client/*\"],\"x-probe-id\":[\"probe-123\"]}"
+        );
+
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/default/info");
+        request.addHeader("x-probe-id", "probe-123");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        filter.doFilterInternal(request, response, new MockFilterChain());
+
+        assertThat(listAppender.list).isEmpty();
+    }
+
+    @Test
+    void shouldLogOutgoingResponseEvenWhenChainThrows() {
+        RequestResponseHeaderLoggingFilter filter = new RequestResponseHeaderLoggingFilter(
+                true,
+                new ObjectMapper(),
+                "{\"user-agent\":[\"HealthChecker/1.0\"]}"
+        );
+
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/default/info");
+        request.addHeader("user-agent", "curl/8.7.1");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        assertThatThrownBy(() -> filter.doFilterInternal(request, response, (req, res) -> {
+            throw new ServletException("boom");
+        })).isInstanceOf(ServletException.class)
+                .hasMessage("boom");
+
+        assertThat(listAppender.list).hasSize(2);
+        assertThat(listAppender.list.get(0).getFormattedMessage()).contains("Incoming request headers");
+        assertThat(listAppender.list.get(1).getFormattedMessage()).contains("Outgoing response headers");
     }
 }

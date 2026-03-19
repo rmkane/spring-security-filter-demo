@@ -83,7 +83,7 @@ export ACME_SECURITY_HEADER_FILTER_IGNORED_HEADERS='{"user-agent":["GLB-Client/*
 
 Behavior notes:
 
-- header names are matched using the exact configured key as read from the request
+- configured header names are normalized to lowercase before matching
 - header values support exact matches and simple `*` wildcard patterns
 - empty or missing JSON means no ignored-header rules
 - trailing commas in the JSON are tolerated by the parser
