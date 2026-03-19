@@ -41,7 +41,7 @@ acme:
   security:
     header-filter:
       enabled: ${ACME_SECURITY_HEADER_FILTER_ENABLED:true}
-      ignored-headers: '${ACME_SECURITY_HEADER_FILTER_IGNORED_HEADERS:{"user-agent":["GLB-Client/1.35+","HealthChecker/1.0"]}}'
+      ignored-headers: '${ACME_SECURITY_HEADER_FILTER_IGNORED_HEADERS:{"user-agent":["GLB-Client/*","HealthChecker/*"]}}'
 ```
 
 The logger level is configured with:
@@ -78,13 +78,13 @@ JSON string containing request header names mapped to exact values that should b
 Example:
 
 ```bash
-export ACME_SECURITY_HEADER_FILTER_IGNORED_HEADERS='{"user-agent":["GLB-Client/1.35+","HealthChecker/1.0"]}'
+export ACME_SECURITY_HEADER_FILTER_IGNORED_HEADERS='{"user-agent":["GLB-Client/*","HealthChecker/*"]}'
 ```
 
 Behavior notes:
 
 - header names are matched using the exact configured key as read from the request
-- header values are exact-match only
+- header values support exact matches and simple `*` wildcard patterns
 - empty or missing JSON means no ignored-header rules
 - trailing commas in the JSON are tolerated by the parser
 
@@ -165,6 +165,12 @@ Run simulated probe traffic that should be ignored by the filter:
 
 ```bash
 ./scripts/simulate-traffic.sh
+```
+
+When you finish production debugging, reduce the log level again to avoid excess log volume:
+
+```bash
+export LOG_ACME_SECURITY_LVL=INFO
 ```
 
 Check the log output:

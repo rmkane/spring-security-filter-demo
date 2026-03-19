@@ -97,4 +97,21 @@ class RequestResponseHeaderLoggingFilterTest {
 
         assertThat(listAppender.list).isEmpty();
     }
+
+    @Test
+    void shouldNotLogWhenHeaderValueMatchesWildcardPattern() throws ServletException, IOException {
+        RequestResponseHeaderLoggingFilter filter = new RequestResponseHeaderLoggingFilter(
+                true,
+                new ObjectMapper(),
+                "{\"user-agent\":[\"GLB-Client/*\"]}"
+        );
+
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/default/info");
+        request.addHeader("user-agent", "GLB-Client/1.35+");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        filter.doFilterInternal(request, response, new MockFilterChain());
+
+        assertThat(listAppender.list).isEmpty();
+    }
 }

@@ -49,4 +49,14 @@ class RequestResponseHeaderLoggingFilterIntegrationTest {
         assertThat(output.getOut()).doesNotContain("> GET /actuator/health HTTP/1.1");
         assertThat(output.getOut()).doesNotContain("< HTTP/1.1 200");
     }
+
+    @Test
+    void shouldNotLogIgnoredWildcardGlbRequest(CapturedOutput output) throws Exception {
+        mockMvc.perform(get("/api/default/info")
+                        .header("user-agent", "GLB-Client/1.35+")
+                        .header("accept", "application/json"))
+                .andExpect(status().isOk());
+
+        assertThat(output.getOut()).doesNotContain("> GET /api/default/info HTTP/1.1");
+    }
 }

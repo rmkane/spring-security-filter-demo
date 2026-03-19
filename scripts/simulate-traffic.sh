@@ -39,8 +39,8 @@ while true; do
     make_request "GET /actuator/health/liveness (HealthChecker/1.0)" "http://localhost:8080/actuator/health/liveness" "HealthChecker/1.0"
     make_request "GET /actuator/health/readiness (HealthChecker/1.0)" "http://localhost:8080/actuator/health/readiness" "HealthChecker/1.0"
 
-    # Simulate traffic from a GLB client
-    make_request "GET / (GLB-Client/1.35+)" "http://localhost:8080/" "GLB-Client/1.35+"
+    # Simulate traffic from a GLB client against a real application endpoint
+    make_request "GET /api/default/info (GLB-Client/1.35+)" "http://localhost:8080/api/default/info" "GLB-Client/1.35+"
 
     printf '\nSleeping 5 seconds before next cycle...\n'
 

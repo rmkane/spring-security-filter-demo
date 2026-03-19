@@ -8,7 +8,7 @@ acme:
   security:
     header-filter:
       enabled: ${ACME_SECURITY_HEADER_FILTER_ENABLED:true}
-      ignored-headers: '${ACME_SECURITY_HEADER_FILTER_IGNORED_HEADERS:{"user-agent":["GLB-Client/1.35+","HealthChecker/1.0"]}}'
+      ignored-headers: '${ACME_SECURITY_HEADER_FILTER_IGNORED_HEADERS:{"user-agent":["GLB-Client/*","HealthChecker/*"]}}'
 
 logging:
   level:
