@@ -14,8 +14,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.micrometer.common.lang.NonNull;
 
 import org.acme.demo.security.config.HeaderFilterProperties;
-import org.acme.demo.util.HeaderFilterConfigParser;
-import org.acme.demo.util.HeaderValuePatternMatcher;
+import org.acme.demo.security.utils.HeaderFilterConfigParser;
+import org.acme.demo.security.utils.HeaderValuePatternMatcher;
 
 @Component
 public class RequestHeaderLoggingPolicy {

@@ -13,7 +13,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import io.micrometer.common.lang.NonNull;
 
-import org.acme.demo.util.CurlStyleHeaderLoggingUtil;
+import org.acme.demo.security.utils.CurlStyleHeaderLoggingUtil;
 
 @Component
 @Slf4j
