@@ -24,13 +24,17 @@ import org.acme.demo.util.HeaderFilterConfigParser;
 @Slf4j
 public class RequestResponseHeaderLoggingFilter extends OncePerRequestFilter {
 
+    private final boolean enabled;
     private final Map<String, Set<String>> ignoredHeaders;
 
     public RequestResponseHeaderLoggingFilter(
+            @Value("${acme.security.header-filter.enabled:true}")
+            boolean enabled,
             ObjectMapper objectMapper,
             @Value("${acme.security.header-filter.ignored-headers:}")
             String ignoredHeadersJson
     ) {
+        this.enabled = enabled;
         this.ignoredHeaders = HeaderFilterConfigParser.parseIgnoredHeaders(objectMapper, ignoredHeadersJson);
     }
 
@@ -46,14 +50,16 @@ public class RequestResponseHeaderLoggingFilter extends OncePerRequestFilter {
         }
 
         log.debug("Incoming request headers\n{}", CurlStyleHeaderLoggingUtil.formatRequest(request));
-        
-        filterChain.doFilter(request, response);
 
-        log.debug("Outgoing response headers\n{}", CurlStyleHeaderLoggingUtil.formatResponse(request, response));
+        try {
+            filterChain.doFilter(request, response);
+        } finally {
+            log.debug("Outgoing response headers\n{}", CurlStyleHeaderLoggingUtil.formatResponse(request, response));
+        }
     }
 
     private boolean shouldLog(@NonNull HttpServletRequest request) {
-        return log.isDebugEnabled() && !shouldIgnore(request);
+        return enabled && log.isDebugEnabled() && !shouldIgnore(request);
     }
 
     private boolean shouldIgnore(@NonNull HttpServletRequest request) {
