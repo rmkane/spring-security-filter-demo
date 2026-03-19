@@ -8,18 +8,19 @@ import java.util.StringJoiner;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
+
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class CurlStyleHeaderLoggingUtil {
 
     private static final Set<String> SENSITIVE_HEADERS = Set.of(
-            "authorization",
-            "proxy-authorization",
-            "cookie",
-            "set-cookie",
-            "x-api-key"
+        "authorization",
+        "proxy-authorization",
+        "cookie",
+        "set-cookie",
+        "x-api-key"
     );
-
-    private CurlStyleHeaderLoggingUtil() {
-    }
 
     public static String formatRequest(HttpServletRequest request) {
         StringJoiner joiner = new StringJoiner(System.lineSeparator());

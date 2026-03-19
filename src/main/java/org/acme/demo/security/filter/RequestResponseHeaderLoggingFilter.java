@@ -1,12 +1,11 @@
 package org.acme.demo.security.filter;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -23,13 +22,14 @@ import io.micrometer.common.lang.NonNull;
 
 import org.acme.demo.util.CurlStyleHeaderLoggingUtil;
 import org.acme.demo.util.HeaderFilterConfigParser;
+import org.acme.demo.util.HeaderValuePatternMatcher;
 
 @Component
 @Slf4j
 public class RequestResponseHeaderLoggingFilter extends OncePerRequestFilter {
 
     private final boolean enabled;
-    private final Map<String, Set<String>> ignoredHeaders;
+    private final Map<String, List<HeaderValuePatternMatcher>> ignoredHeaderMatchers;
 
     public RequestResponseHeaderLoggingFilter(
             @Value("${acme.security.header-filter.enabled:true}")
@@ -39,7 +39,9 @@ public class RequestResponseHeaderLoggingFilter extends OncePerRequestFilter {
             String ignoredHeadersJson
     ) {
         this.enabled = enabled;
-        this.ignoredHeaders = HeaderFilterConfigParser.parseIgnoredHeaders(objectMapper, ignoredHeadersJson);
+        this.ignoredHeaderMatchers = compileIgnoredHeaders(
+                HeaderFilterConfigParser.parseIgnoredHeaders(objectMapper, ignoredHeadersJson)
+        );
     }
 
     @Override
@@ -67,20 +69,26 @@ public class RequestResponseHeaderLoggingFilter extends OncePerRequestFilter {
     }
 
     private boolean shouldIgnore(@NonNull HttpServletRequest request) {
-        return ignoredHeaders.entrySet().stream()
+        return ignoredHeaderMatchers.entrySet().stream()
             .anyMatch(entry -> Collections.list(request.getHeaders(entry.getKey())).stream()
                 .anyMatch(headerValue -> entry.getValue().stream()
-                    .anyMatch(ignoredValuePattern -> matchesIgnoredPattern(headerValue, ignoredValuePattern))));
+                    .anyMatch(matcher -> matcher.matches(headerValue))));
     }
 
-    private boolean matchesIgnoredPattern(String headerValue, String ignoredValuePattern) {
-        if (!ignoredValuePattern.contains("*")) {
-            return ignoredValuePattern.equals(headerValue);
+    private Map<String, List<HeaderValuePatternMatcher>> compileIgnoredHeaders(Map<String, Set<String>> ignoredHeaders) {
+        if (ignoredHeaders.isEmpty()) {
+            return Map.of();
         }
 
-        String regex = Arrays.stream(ignoredValuePattern.split("\\*", -1))
-                .map(Pattern::quote)
-                .collect(Collectors.joining(".*"));
-        return Pattern.compile(regex).matcher(headerValue).matches();
+        Map<String, List<HeaderValuePatternMatcher>> compiledMatchers = new LinkedHashMap<>();
+
+        ignoredHeaders.forEach((headerName, ignoredValues) -> compiledMatchers.put(
+                headerName,
+                ignoredValues.stream()
+                        .map(HeaderValuePatternMatcher::compile)
+                        .toList()
+        ));
+
+        return Map.copyOf(compiledMatchers);
     }
 }

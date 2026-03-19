@@ -9,15 +9,18 @@ import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
+
 import com.fasterxml.jackson.core.json.JsonReadFeature;
 
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class HeaderFilterConfigParser {
 
+    private static final String IGNORED_HEADERS_PROPERTY = "acme.security.header-filter.ignored-headers";
     private static final TypeReference<Map<String, Set<String>>> IGNORED_HEADERS_TYPE = new TypeReference<>() {
     };
-
-    private HeaderFilterConfigParser() {
-    }
 
     public static Map<String, Set<String>> parseIgnoredHeaders(ObjectMapper objectMapper, String ignoredHeadersJson) {
         if (ignoredHeadersJson == null || ignoredHeadersJson.isBlank()) {
@@ -31,7 +34,7 @@ public final class HeaderFilterConfigParser {
 
             return normalizeHeaders(parsedHeaders);
         } catch (Exception exception) {
-            throw new IllegalArgumentException("Failed to parse acme.security.header-filter.ignored-headers JSON", exception);
+            throw new IllegalArgumentException("Failed to parse " + IGNORED_HEADERS_PROPERTY + " JSON", exception);
         }
     }
 
