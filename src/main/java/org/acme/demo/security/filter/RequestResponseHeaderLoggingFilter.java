@@ -6,6 +6,7 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.stereotype.Component;
@@ -16,14 +17,11 @@ import io.micrometer.common.lang.NonNull;
 import org.acme.demo.security.utils.CurlStyleHeaderLoggingUtil;
 
 @Component
+@RequiredArgsConstructor
 @Slf4j
 public class RequestResponseHeaderLoggingFilter extends OncePerRequestFilter {
 
     private final RequestHeaderLoggingPolicy requestHeaderLoggingPolicy;
-
-    public RequestResponseHeaderLoggingFilter(RequestHeaderLoggingPolicy requestHeaderLoggingPolicy) {
-        this.requestHeaderLoggingPolicy = requestHeaderLoggingPolicy;
-    }
 
     @Override
     protected void doFilterInternal(

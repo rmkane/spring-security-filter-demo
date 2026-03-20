@@ -29,7 +29,7 @@ class RequestHeaderLoggingPolicyTest {
     @Test
     void shouldNotLogWhenAnyConfiguredHeaderNameMatches() {
         RequestHeaderLoggingPolicy policy = new RequestHeaderLoggingPolicy(
-                properties(true, "{\"user-agent\":[\"GLB-Client/*\"],\"x-probe-id\":[\"probe-123\"]}"),
+                properties(true, "{\"user-agent\":[\"ELB-HealthChecker/*\"],\"x-probe-id\":[\"probe-123\"]}"),
                 objectMapper
         );
 
@@ -42,12 +42,12 @@ class RequestHeaderLoggingPolicyTest {
     @Test
     void shouldNotLogWhenWildcardPatternMatches() {
         RequestHeaderLoggingPolicy policy = new RequestHeaderLoggingPolicy(
-                properties(true, "{\"user-agent\":[\"GLB-Client/*\"]}"),
+                properties(true, "{\"user-agent\":[\"ELB-HealthChecker/*\"]}"),
                 objectMapper
         );
 
         MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/default/info");
-        request.addHeader("user-agent", "GLB-Client/1.35+");
+        request.addHeader("user-agent", "ELB-HealthChecker/2.0");
 
         assertThat(policy.shouldLog(request, true)).isFalse();
     }

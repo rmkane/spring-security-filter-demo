@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.Set;
 
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.Getter;
 
 import org.springframework.stereotype.Component;
 
@@ -18,6 +19,7 @@ import org.acme.demo.security.utils.HeaderFilterConfigParser;
 import org.acme.demo.security.utils.HeaderValuePatternMatcher;
 
 @Component
+@Getter
 public class RequestHeaderLoggingPolicy {
 
     private final boolean enabled;

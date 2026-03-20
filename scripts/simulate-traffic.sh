@@ -1,5 +1,12 @@
 #!/usr/bin/env bash
 
+graceful_shutdown() {
+    printf '\n[%s] Received SIGINT, shutting down traffic simulator gracefully.\n' "$(date '+%Y-%m-%d %H:%M:%S')"
+    exit 0
+}
+
+trap graceful_shutdown INT
+
 print_header() {
     printf '\033[2J\033[H'
     printf 'Simulating traffic every 5 seconds\n'
@@ -35,12 +42,11 @@ while true; do
     print_header
 
     # Simulate traffic from a health checker
-    make_request "GET /actuator/health (HealthChecker/1.0)" "http://localhost:8080/actuator/health" "HealthChecker/1.0"
     make_request "GET /actuator/health/liveness (HealthChecker/1.0)" "http://localhost:8080/actuator/health/liveness" "HealthChecker/1.0"
     make_request "GET /actuator/health/readiness (HealthChecker/1.0)" "http://localhost:8080/actuator/health/readiness" "HealthChecker/1.0"
 
-    # Simulate traffic from a GLB client against a real application endpoint
-    make_request "GET /api/default/info (GLB-Client/1.35+)" "http://localhost:8080/api/default/info" "GLB-Client/1.35+"
+    # Simulate traffic from an ELB health checker against a real application endpoint
+    make_request "GET /actuator/health (ELB-HealthChecker/2.0)" "http://localhost:8080/api/default/info" "ELB-HealthChecker/2.0"
 
     printf '\nSleeping 5 seconds before next cycle...\n'
 
