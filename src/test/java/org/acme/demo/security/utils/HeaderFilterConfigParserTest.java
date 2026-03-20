@@ -18,28 +18,28 @@ class HeaderFilterConfigParserTest {
     void shouldNormalizeHeaderNamesAndTrimValues() {
         String ignoredHeadersJson = """
                 {
-                  "User-Agent": [" GLB-Client/1.35+ ", "HealthChecker/1.0"]
+                  "User-Agent": [" ELB-HealthChecker/2.0 ", "HealthChecker/1.0"]
                 }
                 """;
 
         Map<String, Set<String>> ignoredHeaders = HeaderFilterConfigParser.parseIgnoredHeaders(objectMapper, ignoredHeadersJson);
 
         assertThat(ignoredHeaders)
-                .containsEntry("user-agent", Set.of("GLB-Client/1.35+", "HealthChecker/1.0"));
+                .containsEntry("user-agent", Set.of("ELB-HealthChecker/2.0", "HealthChecker/1.0"));
     }
 
     @Test
     void shouldAllowTrailingCommaInJson() {
         String ignoredHeadersJson = """
                 {
-                  "user-agent": ["GLB-Client/1.35+"],
+                  "user-agent": ["ELB-HealthChecker/2.0"],
                 }
                 """;
 
         Map<String, Set<String>> ignoredHeaders = HeaderFilterConfigParser.parseIgnoredHeaders(objectMapper, ignoredHeadersJson);
 
         assertThat(ignoredHeaders)
-                .containsEntry("user-agent", Set.of("GLB-Client/1.35+"));
+                .containsEntry("user-agent", Set.of("ELB-HealthChecker/2.0"));
     }
 
     @Test

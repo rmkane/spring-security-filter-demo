@@ -51,9 +51,9 @@ class RequestResponseHeaderLoggingFilterIntegrationTest {
     }
 
     @Test
-    void shouldNotLogIgnoredWildcardGlbRequest(CapturedOutput output) throws Exception {
+    void shouldNotLogIgnoredWildcardElbRequest(CapturedOutput output) throws Exception {
         mockMvc.perform(get("/api/default/info")
-                        .header("user-agent", "GLB-Client/1.35+")
+                        .header("user-agent", "ELB-HealthChecker/2.0")
                         .header("accept", "application/json"))
                 .andExpect(status().isOk());
 

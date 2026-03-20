@@ -41,7 +41,7 @@ acme:
   security:
     header-filter:
       enabled: ${ACME_SECURITY_HEADER_FILTER_ENABLED:true}
-      ignored-headers: '${ACME_SECURITY_HEADER_FILTER_IGNORED_HEADERS:{"user-agent":["GLB-Client/*","HealthChecker/*"]}}'
+      ignored-headers: '${ACME_SECURITY_HEADER_FILTER_IGNORED_HEADERS:{"user-agent":["ELB-HealthChecker/*","HealthChecker/*"]}}'
 ```
 
 The logger level is configured with:
@@ -78,7 +78,7 @@ JSON string containing request header names mapped to exact values that should b
 Example:
 
 ```bash
-export ACME_SECURITY_HEADER_FILTER_IGNORED_HEADERS='{"user-agent":["GLB-Client/*","HealthChecker/*"]}'
+export ACME_SECURITY_HEADER_FILTER_IGNORED_HEADERS='{"user-agent":["ELB-HealthChecker/*","HealthChecker/*"]}'
 ```
 
 Behavior notes:
