@@ -1,4 +1,4 @@
-package org.acme.demo.util;
+package org.acme.demo.security.utils;
 
 import java.util.Arrays;
 import java.util.regex.Pattern;

@@ -1,4 +1,4 @@
-package org.acme.demo.util;
+package org.acme.demo.security.utils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
