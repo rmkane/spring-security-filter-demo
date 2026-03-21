@@ -18,7 +18,7 @@ import com.fasterxml.jackson.core.json.JsonReadFeature;
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class HeaderFilterConfigParser {
 
-    private static final String IGNORED_HEADERS_PROPERTY = "acme.security.header-filter.ignored-headers";
+    private static final String IGNORE_HEADERS_PROPERTY = "acme.security.header-filter.ignore-headers";
     private static final TypeReference<Map<String, Set<String>>> IGNORED_HEADERS_TYPE = new TypeReference<>() {
     };
 
@@ -34,7 +34,7 @@ public final class HeaderFilterConfigParser {
 
             return normalizeHeaders(parsedHeaders);
         } catch (Exception exception) {
-            throw new IllegalArgumentException("Failed to parse " + IGNORED_HEADERS_PROPERTY + " JSON", exception);
+            throw new IllegalArgumentException("Failed to parse " + IGNORE_HEADERS_PROPERTY + " JSON", exception);
         }
     }
 

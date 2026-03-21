@@ -18,7 +18,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 @AutoConfigureMockMvc
 @ExtendWith(OutputCaptureExtension.class)
 @TestPropertySource(properties = {
-        "acme.security.header-filter.enabled=true",
+        "acme.security.headers.require-mtls-headers=false",
         "logging.level.org.acme.demo.security=DEBUG"
 })
 class RequestResponseHeaderLoggingFilterIntegrationTest {

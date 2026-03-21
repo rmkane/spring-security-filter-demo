@@ -6,9 +6,21 @@ management:
 
 acme:
   security:
+    headers:
+      subject-dn: x-amzn-mtls-clientcert-subject
+      issuer-dn: x-amzn-mtls-clientcert-issuer
+      # Require mTLS forwarding headers for /api/** (see SecurityConfig). Health stays open for probes.
+      require-mtls-headers: true
+      # In-memory-style allowlist: only these client cert subject DNs may call /api/** (exact match, trimmed).
+      # Match scripts/lib/common.sh defaults (override MTLS_SUBJECT_DN / MTLS_ISSUER_DN as needed).
+      allowed-client-subjects:
+        - "CN=demo-client,O=local"
     header-filter:
-      enabled: ${ACME_SECURITY_HEADER_FILTER_ENABLED:true}
-      ignored-headers: '${ACME_SECURITY_HEADER_FILTER_IGNORED_HEADERS:{"user-agent":["ELB-HealthChecker/*","HealthChecker/*"]}}'
+      disabled: false
+      ignore-headers: |-
+        {
+          "user-agent": ["ELB-HealthChecker/*", "HealthChecker/*"]
+        }
 
 logging:
   level:

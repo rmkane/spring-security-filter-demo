@@ -1,54 +1,114 @@
 #!/usr/bin/env bash
+#
+# Simulate periodic probe traffic against a local Spring Boot app.
+# Expects header-logging rules to suppress noise from probe user-agents.
+#
 
-graceful_shutdown() {
-    printf '\n[%s] Received SIGINT, shutting down traffic simulator gracefully.\n' "$(date '+%Y-%m-%d %H:%M:%S')"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=lib/common.sh
+source "${SCRIPT_DIR}/lib/common.sh"
+
+# -----------------------------------------------------------------------------
+# Configuration (override via environment)
+# -----------------------------------------------------------------------------
+readonly INTERVAL_SECONDS="${INTERVAL_SECONDS:-5}"
+
+# -----------------------------------------------------------------------------
+# Scenarios: each line is "description|path (relative to BASE_URL)|User-Agent"
+# -----------------------------------------------------------------------------
+readonly -a SCENARIOS=(
+    "GET /actuator/health/liveness (HealthChecker/1.0)|/actuator/health/liveness|HealthChecker/1.0"
+    "GET /actuator/health/readiness (HealthChecker/1.0)|/actuator/health/readiness|HealthChecker/1.0"
+    "GET /api/default/info (ELB-HealthChecker/2.0)|/api/default/info|ELB-HealthChecker/2.0"
+)
+
+# -----------------------------------------------------------------------------
+# Lifecycle
+# -----------------------------------------------------------------------------
+shutdown_gracefully() {
+    printf '\n'
+    log "Received SIGINT; exiting traffic simulator."
     exit 0
 }
 
-trap graceful_shutdown INT
+trap shutdown_gracefully INT
 
-print_header() {
+# -----------------------------------------------------------------------------
+# Output
+# -----------------------------------------------------------------------------
+clear_screen() {
     printf '\033[2J\033[H'
-    printf 'Simulating traffic every 5 seconds\n'
-    printf 'Cycle started: %s\n\n' "$(date '+%Y-%m-%d %H:%M:%S')"
 }
 
-print_request() {
-    local request_name="$1"
-    local status_code="$2"
-    local status_label="OK"
+print_cycle_banner() {
+    clear_screen
+    log "Traffic simulator — interval ${INTERVAL_SECONDS}s, base ${BASE_URL}"
+    printf '\n'
+}
 
-    if [[ "$status_code" != "200" ]]; then
-        status_label="ERROR"
+print_result() {
+    local description="$1"
+    local http_code="$2"
+    local label="OK"
+
+    if [[ "$http_code" != "200" ]]; then
+        label="ERROR"
     fi
 
-    printf '[%s] %s -> HTTP %s (%s)\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$request_name" "$status_code" "$status_label"
+    log "${description} -> HTTP ${http_code} (${label})"
 }
 
-make_request() {
-    local request_name="$1"
-    local url="$2"
+# -----------------------------------------------------------------------------
+# HTTP
+# -----------------------------------------------------------------------------
+# Prints HTTP status code only (stdout).
+# API paths include mTLS forwarding headers when the app uses require-mtls-headers=true.
+http_get_code() {
+    local url="$1"
+    local user_agent="$2"
+    local path="$3"
+
+    local -a curl_args=(
+        -s -o /dev/null -w '%{http_code}' -X GET "$url"
+        -H "user-agent: ${user_agent}"
+        -H "accept: application/json"
+    )
+    if [[ "$path" == *"/api/"* ]]; then
+        curl_args+=("${ACME_MTLS_HEADERS[@]}")
+    fi
+    curl "${curl_args[@]}"
+}
+
+run_scenario() {
+    local description="$1"
+    local path="$2"
     local user_agent="$3"
-    local status_code
+    local url="${BASE_URL}${path}"
+    local code
 
-    status_code="$(curl -s -o /dev/null -w '%{http_code}' -X GET "$url" \
-        -H "user-agent: $user_agent" \
-        -H "accept: application/json")"
-
-    print_request "$request_name" "$status_code"
+    code="$(http_get_code "$url" "$user_agent" "$path")"
+    print_result "$description" "$code"
 }
 
-while true; do
-    print_header
+run_all_scenarios() {
+    local entry
+    for entry in "${SCENARIOS[@]}"; do
+        IFS='|' read -r description path user_agent <<<"$entry"
+        run_scenario "$description" "$path" "$user_agent"
+    done
+}
 
-    # Simulate traffic from a health checker
-    make_request "GET /actuator/health/liveness (HealthChecker/1.0)" "http://localhost:8080/actuator/health/liveness" "HealthChecker/1.0"
-    make_request "GET /actuator/health/readiness (HealthChecker/1.0)" "http://localhost:8080/actuator/health/readiness" "HealthChecker/1.0"
+# -----------------------------------------------------------------------------
+# Main loop
+# -----------------------------------------------------------------------------
+main() {
+    while true; do
+        print_cycle_banner
+        run_all_scenarios
+        printf '\n'
+        log "Sleeping ${INTERVAL_SECONDS}s before next cycle..."
+        sleep "$INTERVAL_SECONDS"
+    done
+}
 
-    # Simulate traffic from an ELB health checker against a real application endpoint
-    make_request "GET /actuator/health (ELB-HealthChecker/2.0)" "http://localhost:8080/api/default/info" "ELB-HealthChecker/2.0"
-
-    printf '\nSleeping 5 seconds before next cycle...\n'
-
-    sleep 5
-done
+main "$@"

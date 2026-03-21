@@ -8,9 +8,10 @@ Small Spring Boot demo app with request/response header logging that can be enab
 
 - [Run The App](#run-the-app)
 - [Header Logging Filter](#header-logging-filter)
+- [mTLS header authentication](#mtls-header-authentication)
 - [Environment Variables](#environment-variables)
-  - [`ACME_SECURITY_HEADER_FILTER_ENABLED`](#acme_security_header_filter_enabled)
-  - [`ACME_SECURITY_HEADER_FILTER_IGNORED_HEADERS`](#acme_security_header_filter_ignored_headers)
+  - [`ACME_SECURITY_HEADERFILTER_DISABLED`](#acme_security_headerfilter_disabled)
+  - [`ACME_SECURITY_HEADERFILTER_IGNOREHEADERS`](#acme_security_headerfilter_ignoreheaders)
   - [`LOG_ACME_SECURITY_LVL`](#log_acme_security_lvl)
 - [Logging Behavior](#logging-behavior)
 - [Rolling Logs](#rolling-logs)
@@ -39,9 +40,18 @@ The request/response header logging filter is controlled by `application.yml` un
 ```yaml
 acme:
   security:
+    headers:
+      subject-dn: x-amzn-mtls-clientcert-subject
+      issuer-dn: x-amzn-mtls-clientcert-issuer
+      require-mtls-headers: true
+      allowed-client-subjects:
+        - "CN=demo-client,O=local"
     header-filter:
-      enabled: ${ACME_SECURITY_HEADER_FILTER_ENABLED:true}
-      ignored-headers: '${ACME_SECURITY_HEADER_FILTER_IGNORED_HEADERS:{"user-agent":["ELB-HealthChecker/*","HealthChecker/*"]}}'
+      disabled: false
+      ignore-headers: |-
+        {
+          "user-agent": ["ELB-HealthChecker/*", "HealthChecker/*"]
+        }
 ```
 
 The logger level is configured with:
@@ -54,31 +64,54 @@ logging:
 
 The filter logs when all of the following are true:
 
-- `acme.security.header-filter.enabled` is `true`
+- `acme.security.header-filter.disabled` is `false` (default)
 - the logger for `org.acme.demo.security` is at `DEBUG`
 - the request does not match an ignored header rule
 
+## mTLS header authentication
+
+Load balancers (e.g. AWS ALB with mTLS) can forward client certificate metadata as HTTP headers. This app maps those into a Spring Security **`Principal`** (`MtlsClientPrincipal`: subject + issuer DNs) and a **`ROLE_MTLS_CLIENT`** authority—**no `UserDetailsService` / in-memory password users** are required; the “who may call the API” list is **`acme.security.headers.allowed-client-subjects`** (exact subject DN match, trimmed).
+
+- **`/actuator/health` and `/actuator/health/**`** → **`permitAll`** (probes work **without** mTLS headers; the mTLS filter skips these entirely).
+- At **`DEBUG`**, the mTLS filter’s **“Authenticated request as mTLS client…”** line is **omitted** when the request matches **`acme.security.header-filter.ignore-headers`** (e.g. `ELB-HealthChecker/*`, `HealthChecker/*`), so simulator/probe traffic doesn’t spam logs while real clients still log.
+- **`/error`** → **`permitAll`** (error dispatch).
+- **`DefaultController`** API methods also use **`@PreAuthorize`** (method security enabled via **`@EnableMethodSecurity`**): access when **`require-mtls-headers`** is **`false`**, or when the caller has **`hasRole("MTLS_CLIENT")`**—this mirrors the HTTP matcher rule for defense in depth.
+- When **`acme.security.headers.require-mtls-headers`** is **`true`** (default in `application.yml`):
+  - **`/api/**`** requires **`hasRole("MTLS_CLIENT")`**: valid mTLS headers **and** (if **`allowed-client-subjects`** is non-empty) a subject DN that appears in that list.
+  - Missing/blank subject or issuer headers → **401 Unauthorized**.
+  - Headers present but subject not allow-listed → **403 Forbidden**.
+  - Any other path → **403** (`denyAll`).
+- Set **`require-mtls-headers: false`** (e.g. in tests via `@TestPropertySource`) to open all routes for local experiments without forwarding headers.
+
+HTTP Basic and the default Spring Boot generated user are **disabled**.
+
+Scripts send demo mTLS headers on **API** calls via `scripts/lib/common.sh` (`MTLS_SUBJECT_DN`, `MTLS_ISSUER_DN`—defaults align with **`allowed-client-subjects`** in `application.yml`).
+
+Use **`GET /api/default/whoami`** to verify the resolved principal when enforcement is enabled.
+
 ## Environment Variables
 
-### `ACME_SECURITY_HEADER_FILTER_ENABLED`
+Defaults for `acme.security.header-filter` and `acme.security.headers` live in `application.yml`. In Kubernetes/Helm (or similar), use these names when you inject configuration (for example via `env` plus a templated `application.yaml`, `SPRING_APPLICATION_JSON`, or your platform’s config merge).
 
-Enables or disables the filter entirely.
+### `ACME_SECURITY_HEADERFILTER_DISABLED`
+
+When `true`, turns off the header logging filter entirely. Use your deployment wiring to map this into `acme.security.header-filter.disabled` (for example `true` / `false` as a boolean).
 
 Examples:
 
 ```bash
-export ACME_SECURITY_HEADER_FILTER_ENABLED=true
-export ACME_SECURITY_HEADER_FILTER_ENABLED=false
+export ACME_SECURITY_HEADERFILTER_DISABLED=false
+export ACME_SECURITY_HEADERFILTER_DISABLED=true
 ```
 
-### `ACME_SECURITY_HEADER_FILTER_IGNORED_HEADERS`
+### `ACME_SECURITY_HEADERFILTER_IGNOREHEADERS`
 
-JSON string containing request header names mapped to exact values that should be ignored.
+Single-line JSON string: request header names mapped to values (exact or `*` wildcards) that suppress logging when matched. Map this into `acme.security.header-filter.ignore-headers` in your external config.
 
 Example:
 
 ```bash
-export ACME_SECURITY_HEADER_FILTER_IGNORED_HEADERS='{"user-agent":["ELB-HealthChecker/*","HealthChecker/*"]}'
+export ACME_SECURITY_HEADERFILTER_IGNOREHEADERS='{"user-agent":["ELB-HealthChecker/*","HealthChecker/*"]}'
 ```
 
 Behavior notes:
@@ -166,6 +199,8 @@ Run simulated probe traffic that should be ignored by the filter:
 ```bash
 ./scripts/simulate-traffic.sh
 ```
+
+Both scripts share `scripts/lib/common.sh` (`SERVER_PORT`, `BASE_URL`, `log`). Override the target host/port with e.g. `BASE_URL=http://localhost:9090 ./scripts/endpoints/get-info.sh`.
 
 When you finish production debugging, reduce the log level again to avoid excess log volume:
 

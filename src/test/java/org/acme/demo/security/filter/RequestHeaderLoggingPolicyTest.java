@@ -2,12 +2,11 @@ package org.acme.demo.security.filter;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import org.acme.demo.security.config.properties.HeaderFilterProperties;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-
-import org.acme.demo.security.config.HeaderFilterProperties;
 
 class RequestHeaderLoggingPolicyTest {
 
@@ -16,7 +15,7 @@ class RequestHeaderLoggingPolicyTest {
     @Test
     void shouldLogWhenEnabledDebugAndRequestIsNotIgnored() {
         RequestHeaderLoggingPolicy policy = new RequestHeaderLoggingPolicy(
-                properties(true, "{\"user-agent\":[\"HealthChecker/*\"]}"),
+                properties(false, "{\"user-agent\":[\"HealthChecker/*\"]}"),
                 objectMapper
         );
 
@@ -29,7 +28,7 @@ class RequestHeaderLoggingPolicyTest {
     @Test
     void shouldNotLogWhenAnyConfiguredHeaderNameMatches() {
         RequestHeaderLoggingPolicy policy = new RequestHeaderLoggingPolicy(
-                properties(true, "{\"user-agent\":[\"ELB-HealthChecker/*\"],\"x-probe-id\":[\"probe-123\"]}"),
+                properties(false, "{\"user-agent\":[\"ELB-HealthChecker/*\"],\"x-probe-id\":[\"probe-123\"]}"),
                 objectMapper
         );
 
@@ -42,7 +41,7 @@ class RequestHeaderLoggingPolicyTest {
     @Test
     void shouldNotLogWhenWildcardPatternMatches() {
         RequestHeaderLoggingPolicy policy = new RequestHeaderLoggingPolicy(
-                properties(true, "{\"user-agent\":[\"ELB-HealthChecker/*\"]}"),
+                properties(false, "{\"user-agent\":[\"ELB-HealthChecker/*\"]}"),
                 objectMapper
         );
 
@@ -55,7 +54,7 @@ class RequestHeaderLoggingPolicyTest {
     @Test
     void shouldNotLogWhenDisabled() {
         RequestHeaderLoggingPolicy policy = new RequestHeaderLoggingPolicy(
-                properties(false, "{\"user-agent\":[\"HealthChecker/1.0\"]}"),
+                properties(true, "{\"user-agent\":[\"HealthChecker/1.0\"]}"),
                 objectMapper
         );
 
@@ -68,7 +67,7 @@ class RequestHeaderLoggingPolicyTest {
     @Test
     void shouldNotLogWhenDebugIsDisabled() {
         RequestHeaderLoggingPolicy policy = new RequestHeaderLoggingPolicy(
-                properties(true, "{\"user-agent\":[\"HealthChecker/1.0\"]}"),
+                properties(false, "{\"user-agent\":[\"HealthChecker/1.0\"]}"),
                 objectMapper
         );
 
@@ -78,7 +77,7 @@ class RequestHeaderLoggingPolicyTest {
         assertThat(policy.shouldLog(request, false)).isFalse();
     }
 
-    private HeaderFilterProperties properties(boolean enabled, String ignoredHeaders) {
-        return new HeaderFilterProperties(enabled, ignoredHeaders);
+    private HeaderFilterProperties properties(boolean disabled, String ignoreHeaders) {
+        return new HeaderFilterProperties(disabled, ignoreHeaders);
     }
 }

@@ -14,7 +14,7 @@ import org.springframework.stereotype.Component;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.micrometer.common.lang.NonNull;
 
-import org.acme.demo.security.config.HeaderFilterProperties;
+import org.acme.demo.security.config.properties.HeaderFilterProperties;
 import org.acme.demo.security.utils.HeaderFilterConfigParser;
 import org.acme.demo.security.utils.HeaderValuePatternMatcher;
 
@@ -22,18 +22,27 @@ import org.acme.demo.security.utils.HeaderValuePatternMatcher;
 @Getter
 public class RequestHeaderLoggingPolicy {
 
-    private final boolean enabled;
+    private final boolean disabled;
     private final Map<String, List<HeaderValuePatternMatcher>> ignoredHeaderMatchers;
 
     public RequestHeaderLoggingPolicy(HeaderFilterProperties properties, ObjectMapper objectMapper) {
-        this.enabled = properties.enabled();
+        this.disabled = properties.disabled();
         this.ignoredHeaderMatchers = compileIgnoredHeaders(
-                HeaderFilterConfigParser.parseIgnoredHeaders(objectMapper, properties.ignoredHeaders())
+                HeaderFilterConfigParser.parseIgnoredHeaders(objectMapper, properties.ignoreHeaders())
         );
     }
 
     public boolean shouldLog(@NonNull HttpServletRequest request, boolean debugEnabled) {
-        return enabled && debugEnabled && !shouldIgnore(request);
+        return !disabled && debugEnabled && !shouldIgnore(request);
+    }
+
+    /**
+     * Whether the request matches {@code acme.security.header-filter.ignore-headers} (e.g. probe {@code User-Agent}
+     * patterns). Independent of whether the request/response logging filter is enabled—useful to suppress other DEBUG
+     * noise for the same traffic.
+     */
+    public boolean matchesIgnoreRules(@NonNull HttpServletRequest request) {
+        return shouldIgnore(request);
     }
 
     private boolean shouldIgnore(@NonNull HttpServletRequest request) {

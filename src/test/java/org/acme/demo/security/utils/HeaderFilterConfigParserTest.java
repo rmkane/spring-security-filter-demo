@@ -48,6 +48,6 @@ class HeaderFilterConfigParserTest {
 
         assertThatThrownBy(() -> HeaderFilterConfigParser.parseIgnoredHeaders(objectMapper, ignoredHeadersJson))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("Failed to parse acme.security.header-filter.ignored-headers JSON");
+                .hasMessageContaining("Failed to parse acme.security.header-filter.ignore-headers JSON");
     }
 }
